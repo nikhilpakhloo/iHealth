@@ -1,19 +1,37 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TextInput, Image } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Image, ActivityIndicator } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { mockDatabase } from '../../../core/api/mockData';
 import { useAppTheme, AppTheme } from '../../../core/theme/useDarkTheme';
 import { groupRecordsForTimeline, TimelineItem } from '../utils/grouping';
+import { useRecords } from '../hooks/useRecords';
+import { useDebounce } from '../../../shared/hooks/useDebounce';
+import { useTranslation } from 'react-i18next';
 
 export const TimelineScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 300);
+  const { t } = useTranslation();
   const theme = useAppTheme();
   const styles = getStyles(theme);
 
-  // Group and flatten the 10,000 records
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+    refetch,
+  } = useRecords();
+
+  const records = useMemo(() => {
+    return data?.pages.flatMap(page => page.data) ?? [];
+  }, [data]);
+
+  // Group and flatten the records (including search filter locally)
   const groupedData = useMemo(
-    () => groupRecordsForTimeline(mockDatabase.records, searchQuery),
-    [searchQuery]
+    () => groupRecordsForTimeline(records, debouncedSearch),
+    [records, debouncedSearch]
   );
 
   const renderItem = ({ item }: { item: TimelineItem }) => {
@@ -31,7 +49,7 @@ export const TimelineScreen = () => {
     return (
       <View style={styles.recordCard}>
         <View style={styles.recordContent}>
-          <Text style={styles.recordType}>{record.type}</Text>
+          <Text style={styles.recordType}>{t(record.type)}</Text>
           <Text style={styles.recordDate}>{date}</Text>
           <Text style={styles.recordDesc} numberOfLines={2}>{record.description}</Text>
         </View>
@@ -45,30 +63,55 @@ export const TimelineScreen = () => {
     );
   };
 
+  const handleEndReached = () => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
-          placeholder="Search records..."
+          placeholder={t('Search records...')}
           placeholderTextColor={theme.colors.textSecondary}
           value={searchQuery}
           onChangeText={setSearchQuery}
           clearButtonMode="while-editing"
         />
       </View>
-      <FlashList
-        data={groupedData}
-        renderItem={renderItem}
-        getItemType={(item) => item.type}
-        contentContainerStyle={styles.listContent}
-        keyboardShouldPersistTaps="handled"
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No records found</Text>
-          </View>
-        }
-      />
+
+      {isLoading ? (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
+      ) : isError ? (
+        <View style={styles.centerContainer}>
+          <Text style={styles.errorText}>{t('Failed to load records.')}</Text>
+          <Text style={styles.retryText} onPress={() => refetch()}>{t('Tap to retry')}</Text>
+        </View>
+      ) : (
+        <FlashList
+          data={groupedData}
+          renderItem={renderItem}
+          getItemType={(item) => item.type}
+          contentContainerStyle={styles.listContent}
+          keyboardShouldPersistTaps="handled"
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            isFetchingNextPage ? (
+              <ActivityIndicator style={{ padding: 20 }} color={theme.colors.primary} />
+            ) : null
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>{t('No records found')}</Text>
+            </View>
+          }
+        />
+      )}
     </View>
   );
 };
@@ -152,5 +195,20 @@ const getStyles = (theme: AppTheme) => StyleSheet.create({
   emptyText: {
     ...theme.typography.body,
     color: theme.colors.textSecondary,
+  },
+  centerContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorText: {
+    ...theme.typography.body,
+    color: theme.colors.error,
+    marginBottom: 8,
+  },
+  retryText: {
+    ...theme.typography.body,
+    color: theme.colors.primary,
+    fontWeight: 'bold',
   },
 });

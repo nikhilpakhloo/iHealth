@@ -2,6 +2,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Stethoscope, Store, FileText, ShoppingCart } from 'lucide-react-native';
 import React from 'react';
 import { useAppTheme } from '../core/theme/useDarkTheme';
+import { useTranslation } from 'react-i18next';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ConsultationsNavigator } from './ConsultationsNavigator';
@@ -14,6 +15,7 @@ const Tab = createBottomTabNavigator();
 export const TabNavigator = () => {
     const insets = useSafeAreaInsets();
     const theme = useAppTheme();
+    const { t } = useTranslation();
 
     return (
         <Tab.Navigator
@@ -26,7 +28,7 @@ export const TabNavigator = () => {
                 tabBarStyle: {
                     backgroundColor: theme.colors.background,
                     borderTopColor: theme.colors.border,
-                    height: 80
+                    height: 80 + insets.bottom
 
                 },
 
@@ -37,7 +39,7 @@ export const TabNavigator = () => {
                 component={ConsultationsNavigator}
                 options={{
                     headerShown: false,
-                    title: 'Consultations',
+                    title: t('Consultations'),
                     tabBarIcon: ({ color, size }) => <Stethoscope color={color} size={size} />
                 }}
             />
@@ -46,15 +48,15 @@ export const TabNavigator = () => {
                 component={ShopNavigator}
                 options={{
                     headerShown: false,
-                    title: 'Shop',
+                    title: t('Shop'),
                     tabBarIcon: ({ color, size }) => <Store color={color} size={size} />
                 }}
             />
-            <Tab.Screen 
-                name="Records" 
+            <Tab.Screen
+                name="Records"
                 component={RecordsScreen}
                 options={{
-                    title: 'Records',
+                    title: t('Records'),
                     tabBarIcon: ({ color, size }) => <FileText color={color} size={size} />
                 }}
             />
@@ -62,7 +64,7 @@ export const TabNavigator = () => {
                 name="CartTab"
                 component={CartScreen}
                 options={{
-                    title: 'Cart',
+                    title: t('Cart'),
                     tabBarIcon: ({ color, size }) => <ShoppingCart color={color} size={size} />
                 }}
             />

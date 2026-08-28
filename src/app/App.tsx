@@ -6,8 +6,9 @@ import { RootNavigator } from '../navigation/RootNavigator';
 import { ErrorBoundary } from '../core/error/ErrorBoundary';
 import { SyncManager } from '../core/offline/SyncManager';
 import { Toast } from '../shared/components/Toast';
+import '../core/i18n/i18n';
 
-const queryClient = new QueryClient();
+import { queryClient } from '../core/api/queryClient';
 
 export const App = () => {
   const isDarkMode = useColorScheme() === 'dark';

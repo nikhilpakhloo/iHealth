@@ -1,38 +1,49 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Search } from 'lucide-react-native';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
-import { mockDatabase, Product } from '../../../core/api/mockData';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+import { Product } from '../../../core/api/mockData';
 import { useAppTheme, AppTheme } from '../../../core/theme/useDarkTheme';
 import { ProductCard } from '../components/ProductCard';
 import { FlashList } from '@shopify/flash-list';
+import { useProducts } from '../hooks/useProducts';
+import { useDebounce } from '../../../shared/hooks/useDebounce';
+import { useTranslation } from 'react-i18next';
 
-const CATEGORIES = ['All', 'Ayurvedic Medicine', 'Supplements', 'Personal Care', 'Herbal Teas', 'Oils'];
+const CATEGORIES = ['All', 'Medicine', 'Equipment', 'Vitamins', 'Ayurvedic', 'Personal Care'];
 
 export const ProductListScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 300);
+  const { t } = useTranslation();
   const theme = useAppTheme();
   const styles = getStyles(theme);
 
-  // Use useMemo to prevent re-filtering on every render unless category/search changes
-  const filteredProducts = useMemo(() => {
-    let result = mockDatabase.products;
-    if (selectedCategory !== 'All') {
-      result = result.filter((p) => p.category === selectedCategory);
-    }
-    if (searchQuery.trim()) {
-      result = result.filter((p) =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-    return result;
-  }, [selectedCategory, searchQuery]);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+    refetch,
+  } = useProducts(debouncedSearch, selectedCategory);
 
-  const renderItem = ({ item }: { item: Product }) => (
+  const products = useMemo(() => {
+    return data?.pages.flatMap(page => page.data) ?? [];
+  }, [data]);
+
+  const renderItem = useCallback(({ item }: { item: Product }) => (
     <View style={styles.cardWrapper}>
       <ProductCard product={item} />
     </View>
-  );
+  ), [styles.cardWrapper]);
+
+  const handleEndReached = () => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -41,7 +52,7 @@ export const ProductListScreen = () => {
           <Search size={20} color={theme.colors.textSecondary} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search products..."
+            placeholder={t('Search products...')}
             placeholderTextColor={theme.colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -66,19 +77,43 @@ export const ProductListScreen = () => {
                   selectedCategory === category && styles.categoryTextSelected,
                 ]}
               >
-                {category}
+                {t(category)}
               </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
 
-      <FlashList
-        data={filteredProducts}
-        renderItem={renderItem}
-        numColumns={2}
-        contentContainerStyle={styles.listContent}
-      />
+      {isLoading ? (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
+      ) : isError ? (
+        <View style={styles.centerContainer}>
+          <Text style={styles.errorText}>{t('Failed to load products.')}</Text>
+          <Text style={styles.retryText} onPress={() => refetch()}>{t('Tap to retry')}</Text>
+        </View>
+      ) : (
+        <FlashList
+          data={products}
+          renderItem={renderItem}
+          numColumns={2}
+          contentContainerStyle={styles.listContent}
+          keyboardShouldPersistTaps="handled"
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            isFetchingNextPage ? (
+              <ActivityIndicator style={{ padding: 20 }} color={theme.colors.primary} />
+            ) : null
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>{t('No products found.')}</Text>
+            </View>
+          }
+        />
+      )}
     </View>
   );
 };
@@ -136,5 +171,30 @@ const getStyles = (theme: AppTheme) => StyleSheet.create({
   cardWrapper: {
     flex: 1,
     padding: theme.spacing.s,
+  },
+  centerContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorText: {
+    ...theme.typography.body,
+    color: theme.colors.error,
+    marginBottom: 8,
+  },
+  retryText: {
+    ...theme.typography.body,
+    color: theme.colors.primary,
+    fontWeight: 'bold',
+  },
+  emptyContainer: {
+    padding: theme.spacing.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
   },
 });

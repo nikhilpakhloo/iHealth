@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Image, Dimensions, TouchableOpacity, ActivityIn
 import { Product } from '../../../core/api/mockData';
 import { useAppTheme, AppTheme } from '../../../core/theme/useDarkTheme';
 import { useCartStore } from '../store/useCartStore';
+import { useTranslation } from 'react-i18next';
 
 interface ProductCardProps {
   product: Product;
@@ -78,6 +79,7 @@ const getStyles = (theme: AppTheme) => StyleSheet.create({
 
 export const ProductCard = React.memo(({ product }: ProductCardProps) => {
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
   const theme = useAppTheme();
   const styles = getStyles(theme);
   
@@ -118,7 +120,7 @@ export const ProductCard = React.memo(({ product }: ProductCardProps) => {
           }}
         >
           <Text style={styles.addButtonText}>
-            {isInCart ? 'Remove' : 'Add to Cart'}
+            {isInCart ? t('Remove') : t('Add to Cart')}
           </Text>
         </TouchableOpacity>
       </View>

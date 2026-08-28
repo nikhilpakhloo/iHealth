@@ -1,7 +1,7 @@
 import NetInfo from '@react-native-community/netinfo';
 import { useSyncStore } from './useSyncStore';
-import { MockApiClient } from '../api/mockClient';
-
+import { useBookingsStore } from '../../features/consultations/store/useBookingsStore';
+import { apiClient } from '../api/apiClient';
 class SyncManagerClass {
   private isProcessing = false;
 
@@ -23,8 +23,23 @@ class SyncManagerClass {
       for (const action of queue) {
         if (action.type === 'BOOK_CONSULTATION') {
           try {
-            const { doctorId, slot } = action.payload;
-            await MockApiClient.createBooking(doctorId, slot);
+            const { doctorId, slot, doctor } = action.payload;
+            const response = await apiClient.post('/bookings', { doctorId, slot });
+            
+            // Confirm the booking
+            const bookings = useBookingsStore.getState().bookings;
+            const pendingBooking = bookings.find(b => b.doctor.id === doctorId && b.slot === slot && b.status === 'pending');
+            
+            if (pendingBooking) {
+              useBookingsStore.getState().removeBooking(pendingBooking.id);
+              useBookingsStore.getState().addBooking({
+                id: response.data?.bookingId || `b_${Date.now()}`,
+                doctor,
+                slot,
+                status: 'confirmed'
+              });
+            }
+
             // If successful, remove from queue
             removeAction(action.id);
             console.log(`[SyncManager] Successfully synced action ${action.id}`);

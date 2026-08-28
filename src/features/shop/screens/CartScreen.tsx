@@ -1,19 +1,21 @@
 import React from 'react';
 import { Plus, Minus, Trash2 } from 'lucide-react-native';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useCartStore } from '../store/useCartStore';
 import { useAppTheme, AppTheme } from '../../../core/theme/useDarkTheme';
-import { MockApiClient } from '../../../core/api/mockClient';
+import { apiClient } from '../../../core/api/apiClient';
 
 export const CartScreen = () => {
   const { items, removeItem, updateQuantity, clearCart, getTotal } = useCartStore();
+  const { t } = useTranslation();
   const theme = useAppTheme();
   const styles = getStyles(theme);
 
   const handleCheckout = async () => {
     if (items.length === 0) return;
     try {
-      await MockApiClient.simulateNetwork();
+      await apiClient.post('/checkout', { items });
       Alert.alert('Success', 'Order placed successfully!');
       clearCart();
     } catch {
@@ -21,13 +23,13 @@ export const CartScreen = () => {
     }
   };
 
-  if (items.length === 0) {
-    return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Your cart is empty</Text>
-      </View>
-    );
-  }
+    if (items.length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>{t('Your cart is empty')}</Text>
+        </View>
+      );
+    }
 
   return (
     <View style={styles.container}>
@@ -70,11 +72,11 @@ export const CartScreen = () => {
 
       <View style={styles.footer}>
         <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Total:</Text>
+          <Text style={styles.totalLabel}>{t('Total:')}</Text>
           <Text style={styles.totalAmount}>₹{getTotal()}</Text>
         </View>
         <TouchableOpacity style={styles.checkoutBtn} onPress={handleCheckout}>
-          <Text style={styles.checkoutBtnText}>Checkout</Text>
+          <Text style={styles.checkoutBtnText}>{t('Checkout')}</Text>
         </TouchableOpacity>
       </View>
     </View>

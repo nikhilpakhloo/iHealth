@@ -3,6 +3,7 @@ import { Star } from 'lucide-react-native';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Doctor } from '../../../core/api/mockData';
 import { useAppTheme, AppTheme } from '../../../core/theme/useDarkTheme';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   doctor: Doctor;
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export const DoctorCard = ({ doctor, onPress }: Props) => {
+  const { t } = useTranslation();
   const theme = useAppTheme();
   const styles = getStyles(theme);
 
@@ -23,7 +25,7 @@ export const DoctorCard = ({ doctor, onPress }: Props) => {
       <View style={styles.header}>
         <View style={styles.info}>
           <Text style={styles.name} numberOfLines={1}>{doctor.name}</Text>
-          <Text style={styles.specialty}>{doctor.specialty}</Text>
+          <Text style={styles.specialty}>{t(doctor.specialty)}</Text>
         </View>
         <View style={styles.ratingBadge}>
           <Star size={12} color="#FF8F00" fill="#FF8F00" />
@@ -31,7 +33,7 @@ export const DoctorCard = ({ doctor, onPress }: Props) => {
         </View>
       </View>
       <View style={styles.slots}>
-        <Text style={styles.slotsLabel}>Available Slots:</Text>
+        <Text style={styles.slotsLabel}>{t('Available Slots:')}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {doctor.availableSlots.slice(0, 3).map(slot => (
             <View key={slot} style={styles.slotChip}>

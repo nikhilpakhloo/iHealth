@@ -29,26 +29,40 @@ const healthImages = [
   'https://images.unsplash.com/photo-1512069772995-ec65ed45afd6?w=400&h=400&fit=crop',
 ];
 
+const productAdjectives = ['Natural', 'Pure', 'Herbal', 'Organic', 'Advanced', 'Essential', 'Daily', 'Vital', 'Holistic', 'Healing'];
+const productNouns = ['Extract', 'Supplement', 'Balm', 'Oil', 'Capsules', 'Tablets', 'Syrup', 'Powder', 'Tea', 'Drops'];
+
+const doctorFirstNames = ['Rajesh', 'Suresh', 'Amit', 'Priya', 'Neha', 'Anjali', 'Kavita', 'Ramesh', 'Arun', 'Sneha', 'Vikram', 'Pooja', 'Rahul', 'Deepak'];
+const doctorLastNames = ['Sharma', 'Patel', 'Singh', 'Gupta', 'Verma', 'Kumar', 'Reddy', 'Joshi', 'Desai', 'Nair'];
+
 const generateProducts = (count: number): Product[] => {
   const categories = ['Medicine', 'Equipment', 'Vitamins', 'Ayurvedic', 'Personal Care'];
-  return Array.from({ length: count }, (_, i) => ({
-    id: `p_${i}`,
-    name: `Health Product ${i + 1}`,
-    price: Math.floor(Math.random() * 2000) + 100,
-    category: categories[Math.floor(Math.random() * categories.length)],
-    imageUrl: healthImages[i % healthImages.length],
-  }));
+  return Array.from({ length: count }, (_, i) => {
+    const adj = productAdjectives[Math.floor(Math.random() * productAdjectives.length)];
+    const noun = productNouns[Math.floor(Math.random() * productNouns.length)];
+    return {
+      id: `p_${i}`,
+      name: `${adj} ${noun} ${i + 1}`,
+      price: Math.floor(Math.random() * 2000) + 100,
+      category: categories[Math.floor(Math.random() * categories.length)],
+      imageUrl: healthImages[i % healthImages.length],
+    };
+  });
 };
 
 const generateDoctors = (count: number): Doctor[] => {
   const specialties = ['Ayurveda General', 'Panchakarma', 'Skin & Hair', 'Digestion', 'Mental Health'];
-  return Array.from({ length: count }, (_, i) => ({
-    id: `d_${i}`,
-    name: `Dr. Vaidya ${i + 1}`,
-    specialty: specialties[Math.floor(Math.random() * specialties.length)],
-    rating: Number((Math.random() * 2 + 3).toFixed(1)), // 3.0 to 5.0
-    availableSlots: ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'],
-  }));
+  return Array.from({ length: count }, (_, i) => {
+    const first = doctorFirstNames[Math.floor(Math.random() * doctorFirstNames.length)];
+    const last = doctorLastNames[Math.floor(Math.random() * doctorLastNames.length)];
+    return {
+      id: `d_${i}`,
+      name: `Dr. ${first} ${last}`,
+      specialty: specialties[Math.floor(Math.random() * specialties.length)],
+      rating: Number((Math.random() * 2 + 3).toFixed(1)), // 3.0 to 5.0
+      availableSlots: ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'],
+    };
+  });
 };
 
 const generateRecords = (count: number): HealthRecord[] => {

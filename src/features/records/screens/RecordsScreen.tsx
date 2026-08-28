@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { TimelineScreen } from './TimelineScreen';
 import { useAppTheme, AppTheme } from '../../../core/theme/useDarkTheme';
+import { useTranslation } from 'react-i18next';
 
 const TABS = ['Timeline', 'Lab Results', 'Prescriptions', 'Vitals'];
 
 export const RecordsScreen = () => {
   const [activeTab, setActiveTab] = useState('Timeline');
+  const { t } = useTranslation();
   const theme = useAppTheme();
   const styles = getStyles(theme);
 
@@ -18,7 +20,7 @@ export const RecordsScreen = () => {
         return (
           <View style={styles.placeholderContainer}>
             <Text style={styles.placeholderText}>
-              {activeTab} content coming soon...
+              {t(activeTab)} {t('content coming soon...')}
             </Text>
           </View>
         );
@@ -44,7 +46,7 @@ export const RecordsScreen = () => {
                   activeTab === tab && styles.activeTabText,
                 ]}
               >
-                {tab}
+                {t(tab)}
               </Text>
             </TouchableOpacity>
           ))}

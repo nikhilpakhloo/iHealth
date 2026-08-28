@@ -3,10 +3,12 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Scr
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ConsultationsStackParamList } from '../../../navigation/ConsultationsNavigator';
 import { useAppTheme, AppTheme } from '../../../core/theme/useDarkTheme';
-import { MockApiClient } from '../../../core/api/mockClient';
+import { apiClient } from '../../../core/api/apiClient';
+import { useBookingsStore } from '../store/useBookingsStore';
 import NetInfo from '@react-native-community/netinfo';
 import { useSyncStore } from '../../../core/offline/useSyncStore';
 import { useToastStore } from '../../../shared/store/useToastStore';
+import { useTranslation } from 'react-i18next';
 
 type Props = NativeStackScreenProps<ConsultationsStackParamList, 'DoctorDetails'>;
 
@@ -14,6 +16,7 @@ export const DoctorDetailsScreen = ({ route, navigation }: Props) => {
   const { doctor } = route.params;
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [isBooking, setIsBooking] = useState(false);
+  const { t } = useTranslation();
   const theme = useAppTheme();
   const styles = getStyles(theme);
 
@@ -28,8 +31,16 @@ export const DoctorDetailsScreen = ({ route, navigation }: Props) => {
       // Offline: queue the action
       useSyncStore.getState().enqueueAction({
         type: 'BOOK_CONSULTATION',
-        payload: { doctorId: doctor.id, slot: selectedSlot }
+        payload: { doctorId: doctor.id, slot: selectedSlot, doctor }
       });
+
+      useBookingsStore.getState().addBooking({
+        id: `temp_${Date.now()}`,
+        doctor,
+        slot: selectedSlot,
+        status: 'pending'
+      });
+
       
       Alert.alert(
         'Offline',
@@ -41,8 +52,15 @@ export const DoctorDetailsScreen = ({ route, navigation }: Props) => {
     }
 
     try {
-      await MockApiClient.createBooking(doctor.id, selectedSlot);
-      useToastStore.getState().show(`Consultation with ${doctor.name} confirmed!`, 'success');
+      const response = await apiClient.post('/bookings', { doctorId: doctor.id, slot: selectedSlot });
+      useBookingsStore.getState().addBooking({
+        id: response.data.bookingId || `b_${Date.now()}`,
+        doctor,
+        slot: selectedSlot,
+        status: 'confirmed'
+      });
+
+      useToastStore.getState().show(t('Consultation confirmed!'), 'success');
       navigation.goBack();
     } catch (error: any) {
       Alert.alert('Booking Failed', error.message || 'The selected slot is no longer available. Please choose another one.');
@@ -56,13 +74,13 @@ export const DoctorDetailsScreen = ({ route, navigation }: Props) => {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.headerCard}>
         <Text style={styles.name}>{doctor.name}</Text>
-        <Text style={styles.specialty}>{doctor.specialty}</Text>
+        <Text style={styles.specialty}>{t(doctor.specialty)}</Text>
         <View style={styles.ratingBadge}>
-          <Text style={styles.ratingText}>⭐ {doctor.rating} Rating</Text>
+          <Text style={styles.ratingText}>⭐ {doctor.rating} {t('Rating')}</Text>
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>Select a Time Slot</Text>
+      <Text style={styles.sectionTitle}>{t('Select a Time Slot')}</Text>
       
       <View style={styles.slotsGrid}>
         {doctor.availableSlots.map((slot) => {
@@ -102,7 +120,7 @@ export const DoctorDetailsScreen = ({ route, navigation }: Props) => {
           {isBooking ? (
             <ActivityIndicator color={theme.colors.surface} />
           ) : (
-            <Text style={styles.bookButtonText}>Book Consultation</Text>
+            <Text style={styles.bookButtonText}>{t('Book Consultation')}</Text>
           )}
         </TouchableOpacity>
       </View>
