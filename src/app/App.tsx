@@ -13,7 +13,6 @@ export const App = () => {
   const isDarkMode = useColorScheme() === 'dark';
 
   React.useEffect(() => {
-    // Initialize global SyncManager to listen for network changes
     SyncManager.init();
   }, []);
 

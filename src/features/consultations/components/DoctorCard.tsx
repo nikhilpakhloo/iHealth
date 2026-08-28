@@ -1,4 +1,5 @@
 import React from 'react';
+import { Star } from 'lucide-react-native';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Doctor } from '../../../core/api/mockData';
 import { useAppTheme, AppTheme } from '../../../core/theme/useDarkTheme';
@@ -13,8 +14,8 @@ export const DoctorCard = ({ doctor, onPress }: Props) => {
   const styles = getStyles(theme);
 
   return (
-    <TouchableOpacity 
-      style={styles.card} 
+    <TouchableOpacity
+      style={styles.card}
       onPress={onPress}
       activeOpacity={0.7}
       disabled={!onPress}
@@ -25,7 +26,8 @@ export const DoctorCard = ({ doctor, onPress }: Props) => {
           <Text style={styles.specialty}>{doctor.specialty}</Text>
         </View>
         <View style={styles.ratingBadge}>
-          <Text style={styles.ratingText}>⭐ {doctor.rating}</Text>
+          <Star size={12} color="#FF8F00" fill="#FF8F00" />
+          <Text style={styles.ratingText}>{doctor.rating}</Text>
         </View>
       </View>
       <View style={styles.slots}>
@@ -81,6 +83,8 @@ const getStyles = (theme: AppTheme) => StyleSheet.create({
     color: theme.colors.textSecondary,
   },
   ratingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: theme.colors.surface,
     paddingHorizontal: theme.spacing.s,
     paddingVertical: 4,
@@ -92,6 +96,7 @@ const getStyles = (theme: AppTheme) => StyleSheet.create({
     ...theme.typography.caption,
     fontWeight: 'bold',
     color: theme.colors.primary,
+    marginLeft: 4,
   },
   slots: {
     marginTop: theme.spacing.xs,

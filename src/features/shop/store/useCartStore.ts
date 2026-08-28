@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
 import { Product } from '../../../core/api/mockData';
+import { useToastStore } from '../../../shared/store/useToastStore';
 
 const storage = createMMKV();
 
@@ -38,6 +39,7 @@ export const useCartStore = create<CartState>()(
       items: [],
       addItem: (product) =>
         set((state) => {
+          useToastStore.getState().show('Added to cart', 'success');
           const existingItem = state.items.find((i) => i.product.id === product.id);
           if (existingItem) {
             return {
@@ -49,9 +51,12 @@ export const useCartStore = create<CartState>()(
           return { items: [...state.items, { product, quantity: 1 }] };
         }),
       removeItem: (productId) =>
-        set((state) => ({
-          items: state.items.filter((i) => i.product.id !== productId),
-        })),
+        set((state) => {
+          useToastStore.getState().show('Removed from cart', 'info');
+          return {
+            items: state.items.filter((i) => i.product.id !== productId),
+          };
+        }),
       updateQuantity: (productId, quantity) =>
         set((state) => ({
           items: state.items.map((i) =>

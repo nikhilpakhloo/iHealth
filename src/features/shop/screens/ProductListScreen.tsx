@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { Search } from 'lucide-react-native';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { mockDatabase, Product } from '../../../core/api/mockData';
 import { useAppTheme, AppTheme } from '../../../core/theme/useDarkTheme';
@@ -36,13 +37,16 @@ export const ProductListScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search products..."
-          placeholderTextColor={theme.colors.textSecondary}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
+        <View style={styles.searchInputWrapper}>
+          <Search size={20} color={theme.colors.textSecondary} style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search products..."
+            placeholderTextColor={theme.colors.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
       </View>
 
       <View>
@@ -88,10 +92,19 @@ const getStyles = (theme: AppTheme) => StyleSheet.create({
     padding: theme.spacing.m,
     backgroundColor: theme.colors.background,
   },
-  searchInput: {
+  searchInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: theme.colors.surface,
-    padding: theme.spacing.m,
     borderRadius: 8,
+    paddingHorizontal: theme.spacing.m,
+  },
+  searchIcon: {
+    marginRight: theme.spacing.s,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: theme.spacing.m,
     ...theme.typography.body,
     color: theme.colors.text,
   },

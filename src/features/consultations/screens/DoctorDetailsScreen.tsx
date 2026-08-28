@@ -6,6 +6,7 @@ import { useAppTheme, AppTheme } from '../../../core/theme/useDarkTheme';
 import { MockApiClient } from '../../../core/api/mockClient';
 import NetInfo from '@react-native-community/netinfo';
 import { useSyncStore } from '../../../core/offline/useSyncStore';
+import { useToastStore } from '../../../shared/store/useToastStore';
 
 type Props = NativeStackScreenProps<ConsultationsStackParamList, 'DoctorDetails'>;
 
@@ -41,11 +42,8 @@ export const DoctorDetailsScreen = ({ route, navigation }: Props) => {
 
     try {
       await MockApiClient.createBooking(doctor.id, selectedSlot);
-      Alert.alert(
-        'Booking Confirmed!',
-        `Your consultation with ${doctor.name} at ${selectedSlot} is confirmed.`,
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
-      );
+      useToastStore.getState().show(`Consultation with ${doctor.name} confirmed!`, 'success');
+      navigation.goBack();
     } catch (error: any) {
       Alert.alert('Booking Failed', error.message || 'The selected slot is no longer available. Please choose another one.');
       setSelectedSlot(null);

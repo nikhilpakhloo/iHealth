@@ -1,4 +1,5 @@
 import React from 'react';
+import { Plus, Minus, Trash2 } from 'lucide-react-native';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
 import { useCartStore } from '../store/useCartStore';
 import { useAppTheme, AppTheme } from '../../../core/theme/useDarkTheme';
@@ -48,14 +49,18 @@ export const CartScreen = () => {
                     }
                   }}
                 >
-                  <Text style={styles.quantityBtnText}>-</Text>
+                  {item.quantity === 1 ? (
+                    <Trash2 size={16} color={theme.colors.error} />
+                  ) : (
+                    <Minus size={18} color={theme.colors.text} />
+                  )}
                 </TouchableOpacity>
                 <Text style={styles.quantityText}>{item.quantity}</Text>
                 <TouchableOpacity
                   style={styles.quantityBtn}
                   onPress={() => updateQuantity(item.product.id, item.quantity + 1)}
                 >
-                  <Text style={styles.quantityBtnText}>+</Text>
+                  <Plus size={18} color={theme.colors.text} />
                 </TouchableOpacity>
               </View>
             </View>
