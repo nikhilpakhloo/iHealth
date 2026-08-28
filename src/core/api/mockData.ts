@@ -22,14 +22,21 @@ export interface HealthRecord {
   attachments: string[];
 }
 
+const healthImages = [
+  'https://images.unsplash.com/photo-1631549916768-4119b2e5f926?w=400&h=400&fit=crop',
+  'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=400&h=400&fit=crop',
+  'https://images.unsplash.com/photo-1607619056574-7b8d3ee536b2?w=400&h=400&fit=crop',
+  'https://images.unsplash.com/photo-1512069772995-ec65ed45afd6?w=400&h=400&fit=crop',
+];
+
 const generateProducts = (count: number): Product[] => {
-  const categories = ['Ayurvedic Medicine', 'Supplements', 'Personal Care', 'Herbal Teas', 'Oils'];
+  const categories = ['Medicine', 'Equipment', 'Vitamins', 'Ayurvedic', 'Personal Care'];
   return Array.from({ length: count }, (_, i) => ({
     id: `p_${i}`,
-    name: `Ayurvedic Product ${i + 1}`,
+    name: `Health Product ${i + 1}`,
     price: Math.floor(Math.random() * 2000) + 100,
     category: categories[Math.floor(Math.random() * categories.length)],
-    imageUrl: `https://picsum.photos/seed/product${i}/200/200`,
+    imageUrl: healthImages[i % healthImages.length],
   }));
 };
 

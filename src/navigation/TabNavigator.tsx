@@ -5,7 +5,7 @@ import { theme } from '../core/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ConsultationsScreen } from '../features/consultations/screens/ConsultationsScreen';
 import { RecordsScreen } from '../features/records/screens/RecordsScreen';
-import { ProductListScreen } from '../features/shop/screens/ProductListScreen';
+import { ShopNavigator } from './ShopNavigator';
 
 const Tab = createBottomTabNavigator();
 
@@ -22,7 +22,14 @@ export const TabNavigator = () => {
             }}
         >
             <Tab.Screen name="Consultations" component={ConsultationsScreen} />
-            <Tab.Screen name="Shop" component={ProductListScreen} />
+            <Tab.Screen 
+                name="ShopTab" 
+                component={ShopNavigator} 
+                options={{ 
+                    headerShown: false,
+                    title: 'Shop'
+                }} 
+            />
             <Tab.Screen name="Records" component={RecordsScreen} />
         </Tab.Navigator>
     );

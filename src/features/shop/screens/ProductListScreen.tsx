@@ -1,79 +1,91 @@
-import React, { useMemo } from 'react';
-import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import React from 'react';
+import { View, StyleSheet, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { MockApiClient } from '../../../core/api/mockClient';
 import { ProductCard } from '../components/ProductCard';
 import { theme } from '../../../core/theme';
-import { Product } from '../../../core/api/mockData';
+import { Product, mockDatabase } from '../../../core/api/mockData';
+import { useProductFilter, SortOption } from '../hooks/useProductFilter';
+
+const CATEGORIES = ['All', 'Medicine', 'Equipment', 'Vitamins', 'Ayurvedic', 'Personal Care'];
 
 export const ProductListScreen = () => {
   const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    isError,
-  } = useInfiniteQuery({
-    queryKey: ['products'],
-    queryFn: ({ pageParam = 1 }) => MockApiClient.getProducts({ page: pageParam, limit: 50 }),
-    getNextPageParam: (lastPage) => {
-      if (lastPage.hasMore) {
-        return lastPage.page + 1;
-      }
-      return undefined;
-    },
-    initialPageParam: 1,
-  });
-
-  const products = useMemo(() => {
-    if (!data) return [];
-    return data.pages.flatMap((page) => page.data);
-  }, [data]);
+    searchQuery,
+    setSearchQuery,
+    selectedCategory,
+    setSelectedCategory,
+    sortBy,
+    setSortBy,
+    filteredProducts,
+    loadMore,
+    hasMore,
+    totalCount,
+  } = useProductFilter(mockDatabase.products);
 
   const renderItem = ({ item }: { item: Product }) => (
     <ProductCard product={item} />
   );
 
-  const renderFooter = () => {
-    if (!isFetchingNextPage) return null;
-    return (
-      <View style={styles.footer}>
-        <ActivityIndicator size="small" color={theme.colors.primary} />
+  const renderHeader = () => (
+    <View style={styles.headerContainer}>
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search products..."
+        placeholderTextColor={theme.colors.textSecondary}
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+      />
+      
+      <View style={styles.filterRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
+          {CATEGORIES.map(cat => {
+            const isSelected = (cat === 'All' && !selectedCategory) || cat === selectedCategory;
+            return (
+              <TouchableOpacity
+                key={cat}
+                style={[styles.categoryPill, isSelected && styles.categoryPillSelected]}
+                onPress={() => setSelectedCategory(cat === 'All' ? null : cat)}
+              >
+                <Text style={[styles.categoryText, isSelected && styles.categoryTextSelected]}>
+                  {cat}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+        
+        <TouchableOpacity
+          style={styles.sortButton}
+          onPress={() => {
+            setSortBy(prev => {
+              if (prev === 'price_asc') return 'price_desc';
+              if (prev === 'price_desc') return null;
+              return 'price_asc';
+            });
+          }}
+        >
+          <Text style={styles.sortButtonText}>
+            {sortBy === 'price_asc' ? 'Price ↑' : sortBy === 'price_desc' ? 'Price ↓' : 'Sort'}
+          </Text>
+        </TouchableOpacity>
       </View>
-    );
-  };
-
-  if (isLoading) {
-    return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-      </View>
-    );
-  }
-
-  if (isError) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>Failed to load products. Please try again.</Text>
-      </View>
-    );
-  }
+      <Text style={styles.resultCount}>{totalCount} results</Text>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
+      {renderHeader()}
       <FlashList
-        data={products}
+        data={filteredProducts}
         renderItem={renderItem}
         numColumns={2}
         onEndReached={() => {
-          if (hasNextPage && !isFetchingNextPage) {
-            fetchNextPage();
+          if (hasMore) {
+            loadMore();
           }
         }}
         onEndReachedThreshold={0.5}
-        ListFooterComponent={renderFooter}
         contentContainerStyle={styles.listContent}
       />
     </View>
@@ -85,22 +97,68 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.surface,
   },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  headerContainer: {
+    padding: theme.spacing.m,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  searchInput: {
+    backgroundColor: theme.colors.background,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    paddingHorizontal: theme.spacing.m,
+    paddingVertical: theme.spacing.s,
+    marginBottom: theme.spacing.s,
+    ...theme.typography.body,
+  },
+  filterRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.surface,
+    marginBottom: theme.spacing.s,
+  },
+  categoryScroll: {
+    flex: 1,
+    marginRight: theme.spacing.s,
+  },
+  categoryPill: {
+    paddingHorizontal: theme.spacing.m,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: 16,
+    backgroundColor: theme.colors.background,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    marginRight: theme.spacing.s,
+  },
+  categoryPillSelected: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  categoryText: {
+    ...theme.typography.caption,
+    color: theme.colors.text,
+  },
+  categoryTextSelected: {
+    color: theme.colors.surface,
+  },
+  sortButton: {
+    paddingHorizontal: theme.spacing.m,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: 16,
+    backgroundColor: theme.colors.background,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  sortButtonText: {
+    ...theme.typography.caption,
+    color: theme.colors.text,
+    fontWeight: '600',
+  },
+  resultCount: {
+    ...theme.typography.caption,
+    color: theme.colors.textSecondary,
   },
   listContent: {
     padding: theme.spacing.s,
-  },
-  footer: {
-    paddingVertical: theme.spacing.m,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorText: {
-    ...theme.typography.body,
-    color: theme.colors.error,
   },
 });
