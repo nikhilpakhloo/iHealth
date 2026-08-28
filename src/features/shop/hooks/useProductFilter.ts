@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Product } from '../../../core/api/mockData';
 import { useDebounce } from '../../../core/hooks/useDebounce';
 
@@ -41,7 +41,7 @@ export function useProductFilter(masterList: Product[]) {
   }, [masterList, debouncedSearch, selectedCategory, sortBy]);
 
   // Reset pagination when filters change
-  useMemo(() => {
+  useEffect(() => {
     setPage(1);
   }, [debouncedSearch, selectedCategory, sortBy]);
 

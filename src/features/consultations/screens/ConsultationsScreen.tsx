@@ -1,18 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { DoctorListScreen } from './DoctorListScreen';
 
 export const ConsultationsScreen = () => {
-  return (
-    <View style={styles.container}>
-      <Text>Consultations</Text>
-    </View>
-  );
+  return <DoctorListScreen />;
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

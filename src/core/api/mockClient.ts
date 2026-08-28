@@ -1,4 +1,5 @@
 import { mockDatabase } from './mockData';
+import { useToastStore } from '../../shared/store/useToastStore';
 
 const SIMULATE_LATENCY = true;
 const MIN_LATENCY = 300;
@@ -15,7 +16,9 @@ export class MockApiClient {
     await delay(latency);
 
     if (Math.random() < ERROR_RATE) {
-      throw new Error('Network Error: Simulated API Failure (500)');
+      const errorMsg = 'Network Error: Simulated API Failure (500)';
+      useToastStore.getState().show(errorMsg, 'error');
+      throw new Error(errorMsg);
     }
   }
 
@@ -74,7 +77,7 @@ export class MockApiClient {
   }
 
   // Simulate a POST request for booking
-  static async createBooking(doctorId: string, slot: string) {
+  static async createBooking(_doctorId: string, _slot: string) {
     await this.simulateNetwork();
 
     // Simulate a 409 Conflict if trying to double book (randomly 10% of time for demo)

@@ -1,164 +1,127 @@
-import React from 'react';
-import { View, StyleSheet, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import React, { useState, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { mockDatabase, Product } from '../../../core/api/mockData';
+import { useAppTheme, AppTheme } from '../../../core/theme/useDarkTheme';
 import { ProductCard } from '../components/ProductCard';
-import { theme } from '../../../core/theme';
-import { Product, mockDatabase } from '../../../core/api/mockData';
-import { useProductFilter, SortOption } from '../hooks/useProductFilter';
+import { FlashList } from '@shopify/flash-list';
 
-const CATEGORIES = ['All', 'Medicine', 'Equipment', 'Vitamins', 'Ayurvedic', 'Personal Care'];
+const CATEGORIES = ['All', 'Ayurvedic Medicine', 'Supplements', 'Personal Care', 'Herbal Teas', 'Oils'];
 
 export const ProductListScreen = () => {
-  const {
-    searchQuery,
-    setSearchQuery,
-    selectedCategory,
-    setSelectedCategory,
-    sortBy,
-    setSortBy,
-    filteredProducts,
-    loadMore,
-    hasMore,
-    totalCount,
-  } = useProductFilter(mockDatabase.products);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const theme = useAppTheme();
+  const styles = getStyles(theme);
+
+  // Use useMemo to prevent re-filtering on every render unless category/search changes
+  const filteredProducts = useMemo(() => {
+    let result = mockDatabase.products;
+    if (selectedCategory !== 'All') {
+      result = result.filter((p) => p.category === selectedCategory);
+    }
+    if (searchQuery.trim()) {
+      result = result.filter((p) =>
+        p.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    return result;
+  }, [selectedCategory, searchQuery]);
 
   const renderItem = ({ item }: { item: Product }) => (
-    <ProductCard product={item} />
-  );
-
-  const renderHeader = () => (
-    <View style={styles.headerContainer}>
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Search products..."
-        placeholderTextColor={theme.colors.textSecondary}
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-      />
-      
-      <View style={styles.filterRow}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-          {CATEGORIES.map(cat => {
-            const isSelected = (cat === 'All' && !selectedCategory) || cat === selectedCategory;
-            return (
-              <TouchableOpacity
-                key={cat}
-                style={[styles.categoryPill, isSelected && styles.categoryPillSelected]}
-                onPress={() => setSelectedCategory(cat === 'All' ? null : cat)}
-              >
-                <Text style={[styles.categoryText, isSelected && styles.categoryTextSelected]}>
-                  {cat}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-        
-        <TouchableOpacity
-          style={styles.sortButton}
-          onPress={() => {
-            setSortBy(prev => {
-              if (prev === 'price_asc') return 'price_desc';
-              if (prev === 'price_desc') return null;
-              return 'price_asc';
-            });
-          }}
-        >
-          <Text style={styles.sortButtonText}>
-            {sortBy === 'price_asc' ? 'Price ↑' : sortBy === 'price_desc' ? 'Price ↓' : 'Sort'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-      <Text style={styles.resultCount}>{totalCount} results</Text>
+    <View style={styles.cardWrapper}>
+      <ProductCard product={item} />
     </View>
   );
 
   return (
     <View style={styles.container}>
-      {renderHeader()}
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search products..."
+          placeholderTextColor={theme.colors.textSecondary}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+      </View>
+
+      <View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categories}>
+          {CATEGORIES.map((category) => (
+            <TouchableOpacity
+              key={category}
+              style={[
+                styles.categoryChip,
+                selectedCategory === category && styles.categoryChipSelected,
+              ]}
+              onPress={() => setSelectedCategory(category)}
+            >
+              <Text
+                style={[
+                  styles.categoryText,
+                  selectedCategory === category && styles.categoryTextSelected,
+                ]}
+              >
+                {category}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
       <FlashList
         data={filteredProducts}
         renderItem={renderItem}
         numColumns={2}
-        onEndReached={() => {
-          if (hasMore) {
-            loadMore();
-          }
-        }}
-        onEndReachedThreshold={0.5}
         contentContainerStyle={styles.listContent}
       />
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.surface,
   },
-  headerContainer: {
+  searchContainer: {
     padding: theme.spacing.m,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
   },
   searchInput: {
-    backgroundColor: theme.colors.background,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.m,
     borderRadius: 8,
+    ...theme.typography.body,
+    color: theme.colors.text,
+  },
+  categories: {
+    paddingHorizontal: theme.spacing.m,
+    paddingBottom: theme.spacing.m,
+    backgroundColor: theme.colors.background,
+  },
+  categoryChip: {
     paddingHorizontal: theme.spacing.m,
     paddingVertical: theme.spacing.s,
-    marginBottom: theme.spacing.s,
-    ...theme.typography.body,
-  },
-  filterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: theme.spacing.s,
-  },
-  categoryScroll: {
-    flex: 1,
+    borderRadius: 20,
+    backgroundColor: theme.colors.surface,
     marginRight: theme.spacing.s,
   },
-  categoryPill: {
-    paddingHorizontal: theme.spacing.m,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: 16,
-    backgroundColor: theme.colors.background,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    marginRight: theme.spacing.s,
-  },
-  categoryPillSelected: {
+  categoryChipSelected: {
     backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
   },
   categoryText: {
-    ...theme.typography.caption,
+    ...theme.typography.body,
     color: theme.colors.text,
   },
   categoryTextSelected: {
-    color: theme.colors.surface,
-  },
-  sortButton: {
-    paddingHorizontal: theme.spacing.m,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: 16,
-    backgroundColor: theme.colors.background,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  sortButtonText: {
-    ...theme.typography.caption,
-    color: theme.colors.text,
-    fontWeight: '600',
-  },
-  resultCount: {
-    ...theme.typography.caption,
-    color: theme.colors.textSecondary,
+    color: theme.colors.background,
   },
   listContent: {
+    padding: theme.spacing.s,
+  },
+  cardWrapper: {
+    flex: 1,
     padding: theme.spacing.s,
   },
 });
