@@ -1,97 +1,50 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Ayurvedic Super App 🌿
 
-# Getting Started
+A production-ready React Native application built to demonstrate high-performance architecture, offline-first capabilities, and scalable design patterns. This app simulates a fully functional ecosystem consisting of Consultations, an E-commerce Shop, and Health Records without relying on a real backend.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## 🚀 Core Features
 
-## Step 1: Start Metro
+### Module 1: Consultations
+- **Doctor Listing & Search:** Rendered using `@shopify/flash-list` for buttery-smooth scrolling of 5,000+ mock doctors. Includes a debounced search to optimize simulated network requests.
+- **Offline-First Booking:** Users can book appointments even when completely disconnected from the internet.
+- **Background Syncing:** A custom `SyncManager` detects network restoration and automatically processes queued offline bookings.
+- **Conflict Handling:** Simulates real-world API behaviors (e.g., random `409 Conflict` errors for double bookings) handled elegantly with global toast notifications.
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+### Module 2: Shop
+- **Infinite Scrolling E-commerce:** Browsing through 20,000 mock products lazily loaded via `react-query` infinite pagination.
+- **Category Filtering:** Filter products dynamically without UI lag.
+- **Persistent Cart:** Powered by Zustand and `react-native-mmkv`, ensuring the user's cart state survives app restarts and offline scenarios instantly.
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+### Module 3: Health Records
+- **Dynamic Timeline Grouping:** Fetches 10,000 flat health records and intelligently groups them by Month/Year using `useMemo` for high-performance timeline rendering.
+- **Multi-Tab Layout:** Separates records into Timeline, Lab Results, Prescriptions, and Vitals.
 
-```sh
-# Using npm
-npm start
+## 🏆 Bonus & Polish
 
-# OR using Yarn
-yarn start
-```
+- **🌐 Localization (i18n):** Full support for English and Hindi. Dynamic translation of UI elements, mock data metadata (categories, specialties), and global toast notifications.
+- **🎛️ Feature Flags:** A dedicated Zustand store (`useFeatureFlags`) mimicking a remote configuration setup (e.g., Firebase Remote Config) to easily toggle A/B test features (like new booking flows or video consultations).
+- **💾 Secure & Fast Storage:** Swapped out traditional `AsyncStorage` for `react-native-mmkv`, providing synchronous, encrypted, and ultra-fast local storage.
 
-## Step 2: Build and run your app
+## 🏗️ Architectural Decisions & Tech Stack
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+### 1. State Management: Zustand + React Query
+- **Why?** Redux is often too boilerplate-heavy. **Zustand** provides a lightweight, scalable solution for global UI state (like the Cart and Feature Flags). **React Query** handles server state (fetching, caching, and infinite pagination).
+- **Offline Caching:** React Query is wrapped with `react-query-persist-client` pointing to an MMKV buster. This means if you load doctors/products while online, they instantly appear the next time you open the app offline.
 
-### Android
+### 2. Network Simulation: Axios + Mock Adapter
+- **Why?** Since the assignment requires working without a backend, `axios-mock-adapter` allows the app to function *exactly* as if it were connected to a production server.
+- **Interceptors:** Axios interceptors are set up to catch mock `401` and `409` errors and translate them into global UI Toast alerts.
 
-```sh
-# Using npm
-npm run android
+### 3. List Virtualization: Shopify FlashList
+- **Why?** Standard `FlatList` drops frames when rendering thousands of items. `FlashList` recycles views efficiently, ensuring steady 60 FPS even when scrolling through 20,000 products with images.
 
-# OR using Yarn
-yarn android
-```
+### 4. Background Sync: NetInfo + Queue Store
+- **Why?** To provide a true "Offline-First" experience, any action that mutates server data (like Booking a Consultation) is appended to an offline queue if the network is unreachable. `SyncManager` listens to `@react-native-community/netinfo` and flushes the queue via background processing when connectivity returns.
 
-### iOS
+## 🛠️ Getting Started
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+1. Clone the repository.
+2. Run `npm install`
+3. Run `npm run ios` or `npm run android`
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+*No backend setup required. All data is deterministically mocked and generated at runtime.*
