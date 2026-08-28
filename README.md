@@ -2,49 +2,57 @@
 
 A production-ready React Native application built to demonstrate high-performance architecture, offline-first capabilities, and scalable design patterns. This app simulates a fully functional ecosystem consisting of Consultations, an E-commerce Shop, and Health Records without relying on a real backend.
 
-## 🚀 Core Features
+## 📁 Folder Structure
 
-### Module 1: Consultations
-- **Doctor Listing & Search:** Rendered using `@shopify/flash-list` for buttery-smooth scrolling of 5,000+ mock doctors. Includes a debounced search to optimize simulated network requests.
-- **Offline-First Booking:** Users can book appointments even when completely disconnected from the internet.
-- **Background Syncing:** A custom `SyncManager` detects network restoration and automatically processes queued offline bookings.
-- **Conflict Handling:** Simulates real-world API behaviors (e.g., random `409 Conflict` errors for double bookings) handled elegantly with global toast notifications.
+The project follows a **feature-based** folder structure, which scales significantly better than standard type-based structures for large apps.
 
-### Module 2: Shop
-- **Infinite Scrolling E-commerce:** Browsing through 20,000 mock products lazily loaded via `react-query` infinite pagination.
-- **Category Filtering:** Filter products dynamically without UI lag.
-- **Persistent Cart:** Powered by Zustand and `react-native-mmkv`, ensuring the user's cart state survives app restarts and offline scenarios instantly.
+```
+src/
+├── app/                  # App entry points and global configurations
+├── core/                 # Core infrastructure (API, Theme, Offline Sync, i18n)
+├── features/             # Independent domain modules
+│   ├── consultations/    # Module 1: Doctor Booking
+│   ├── shop/             # Module 2: E-commerce
+│   ├── records/          # Module 3: Health Timeline
+│   └── splash/           # Splash & Onboarding
+├── navigation/           # React Navigation setup and config
+└── shared/               # Shared cross-domain UI components & hooks
+```
 
-### Module 3: Health Records
-- **Dynamic Timeline Grouping:** Fetches 10,000 flat health records and intelligently groups them by Month/Year using `useMemo` for high-performance timeline rendering.
-- **Multi-Tab Layout:** Separates records into Timeline, Lab Results, Prescriptions, and Vitals.
+## 🏗️ Architectural Decisions
 
-## 🏆 Bonus & Polish
+1. **Feature-Driven Design:** Code is grouped by feature (`features/shop`, `features/consultations`). This encapsulates logic, making it easier for large teams to work in parallel without merge conflicts and paving the way for potential micro-frontend architecture.
+2. **Mock Network Layer:** To fulfill the "no backend" requirement elegantly, we integrated `axios-mock-adapter`. This allows the UI to consume standard Axios endpoints (`/doctors`, `/products`), completely decoupling the UI from the mock data logic and enabling an instant drop-in replacement when a real backend is ready.
+3. **Storage Engine:** Standard `AsyncStorage` is asynchronous and string-based, which causes bottlenecks. We chose `react-native-mmkv`—a blazing fast, synchronous C++ storage engine to back all persistent stores.
 
-- **🌐 Localization (i18n):** Full support for English and Hindi. Dynamic translation of UI elements, mock data metadata (categories, specialties), and global toast notifications.
-- **🎛️ Feature Flags:** A dedicated Zustand store (`useFeatureFlags`) mimicking a remote configuration setup (e.g., Firebase Remote Config) to easily toggle A/B test features (like new booking flows or video consultations).
-- **💾 Secure & Fast Storage:** Swapped out traditional `AsyncStorage` for `react-native-mmkv`, providing synchronous, encrypted, and ultra-fast local storage.
+## 🧠 State Management Choice
 
-## 🏗️ Architectural Decisions & Tech Stack
+We opted for a dual-store strategy, utilizing **Zustand** and **React Query**:
+- **Zustand** is used for strictly **Client/UI State** (Cart items, Feature Flags, Pending Sync Queue). It requires virtually zero boilerplate compared to Redux and scales better.
+- **React Query** handles all **Server State**. Fetching, caching, infinite pagination, and background refetching are delegated to React Query. It is backed by `react-query-persist-client` writing to MMKV, allowing instant cache hits.
 
-### 1. State Management: Zustand + React Query
-- **Why?** Redux is often too boilerplate-heavy. **Zustand** provides a lightweight, scalable solution for global UI state (like the Cart and Feature Flags). **React Query** handles server state (fetching, caching, and infinite pagination).
-- **Offline Caching:** React Query is wrapped with `react-query-persist-client` pointing to an MMKV buster. This means if you load doctors/products while online, they instantly appear the next time you open the app offline.
+## ⚡ Performance Optimizations
 
-### 2. Network Simulation: Axios + Mock Adapter
-- **Why?** Since the assignment requires working without a backend, `axios-mock-adapter` allows the app to function *exactly* as if it were connected to a production server.
-- **Interceptors:** Axios interceptors are set up to catch mock `401` and `409` errors and translate them into global UI Toast alerts.
+- **FlashList Virtualization:** The assignment requires rendering huge lists (20k products, 5k doctors, 10k records). The native `FlatList` drops frames under this load. We implemented `@shopify/flash-list` across the app to recycle views, guaranteeing a smooth 60 FPS.
+- **Debounced Network Requests:** In the Consultation and Shop search bars, `useDebounce` delays the API query by 300ms while typing, drastically cutting down on unnecessary simulated network calls.
+- **Memoization (`useMemo`):** Generating the Timeline from 10,000 flat records is computationally heavy. Grouping logic is memoized to prevent recalculation on every render.
 
-### 3. List Virtualization: Shopify FlashList
-- **Why?** Standard `FlatList` drops frames when rendering thousands of items. `FlashList` recycles views efficiently, ensuring steady 60 FPS even when scrolling through 20,000 products with images.
+## 📴 Offline Strategy
 
-### 4. Background Sync: NetInfo + Queue Store
-- **Why?** To provide a true "Offline-First" experience, any action that mutates server data (like Booking a Consultation) is appended to an offline queue if the network is unreachable. `SyncManager` listens to `@react-native-community/netinfo` and flushes the queue via background processing when connectivity returns.
+The app utilizes a robust **Offline-First** model:
+1. **Instant Reads:** React Query caches all API responses into MMKV. When offline, users can still instantly view previously loaded doctors, products, and records.
+2. **Action Queuing (SyncManager):** When a user books a doctor offline, the action is intercepted and stored in a Zustand queue (`useSyncStore`).
+3. **Background Sync:** The `SyncManager` listens to `@react-native-community/netinfo` events. Upon network restoration, it silently flushes the queue in the background and upgrades the booking status from "Pending (Offline)" to "Confirmed".
 
-## 🛠️ Getting Started
+## ⚖️ Trade-offs Made
 
-1. Clone the repository.
-2. Run `npm install`
-3. Run `npm run ios` or `npm run android`
+1. **Mock Data Generation vs Memory:** To simulate 35,000 entities, the mock database generates objects in memory upon initialization. On low-end devices, this initial generation creates a slight memory spike. In production, this data would exist purely on the database layer.
+2. **No Deep Navigation Nesting:** To maintain navigation clarity, the architecture strictly isolates tabs and their stacks. The trade-off is slightly more boilerplate in `TabNavigator.tsx` vs a deeply nested unstructured flow.
+3. **Aesthetics over Granular Typing:** Some complex API mock types use basic types rather than deep discriminated unions in favor of moving quickly and delivering a premium, fully-functional UI within the 72-hour timeframe limit.
 
-*No backend setup required. All data is deterministically mocked and generated at runtime.*
+## 🔮 Future Improvements
+
+- **End-to-End Testing (Detox):** While business logic and hooks are type-safe, implementing E2E UI testing with Detox would guarantee flow integrity across regressions.
+- **React Native Reanimated:** Implementing gesture-based interactions (like swipe-to-delete in Cart) and shared element transitions (opening Doctor Details) using Reanimated would further elevate the premium feel.
+- **JSI / TurboModules Migration:** Ensure all native modules align with the New Architecture Fabric renderer to future-proof the application.
+- **Real-Time WebSockets:** Replace the mock interval updates with WebSockets or SSE for live available slot reductions when other users book slots.
